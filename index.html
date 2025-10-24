@@ -7,12 +7,20 @@
         <link rel="stylesheet" href="styles.css">
     </head>
     <body>
-        <header></header>
-        <main>
+        <header>
             <h1>Notes App</h1>
-            <textarea id="noteBox"></textarea>
+        </header>
+        <main>
+            <div id="fileArea"></div>
+            <div id="noteArea">
+                <!--The text editor area is contained in an iframe. An iframe contains a separate html document that can be edited
+                documentation: https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement-->
+                 <iframe id="edit"></iframe>
+            </div>
         </main>
-        <footer></footer>
+        <footer>
+            <p>Sam Richter | ISTC 2330 Cross Platform Mobile Apps | Fall `25</p>
+        </footer>
 
         <script src="script.js"></script>
     </body>
