@@ -6,29 +6,35 @@
 
 const KEY_SAVEDATA = 'note';
 
+const e = document.getElementById('edit');
+let win = e.contentWindow;
+let doc = win.document;
+const b = document.getElementById('boldBtn');
+const i = document.getElementById('italicsBtn');
+const u = document.getElementById('underlineBtn');
+const s = document.getElementById('saveBtn')
+
 /**
  * Parentheses around the function denote is as an Immediately Invoked Function Expression (IIFE)
  * This means that it runs as soon as it's defined. Commonly used for initialization.
  */
 (function init(){
-    const edit = document.querySelector('#edit');
-    edit.contentWindow.document.querySelector('body').innerHtml = "Hello!";
     // Set the document within #edit to be editable
-    edit.contentWindow.document.designMode = 'on';
-})();
+    doc.designMode = 'on';
 
-/**
- * Defunct code from when I demonstrated localstorage using just a textArea.
- * 
-// Restore data from localStorage
-(function restore() {
+    // The document can be written to using the string form of the html we grabbed with the save button
     let saveData = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? '';
-    edit.textContent = saveData;
+    doc.open();
+    doc.write(saveData);
+    doc.close();
 })();
 
-noteBox.addEventListener('input', () => {
-    let noteContent = edit.value;
-    localStorage.setItem(KEY_SAVEDATA, JSON.stringify(noteContent));
-    delete(noteContent);
+// Save button
+s.addEventListener('click', () => {
+    /**
+     * Grab the outerHTML from the document as a string and send it to localStorage.
+     * This is apparently a potential XSS vector so I'll probably have to implement sanitation.
+     * See this link for more: https://developer.mozilla.org/en-US/docs/Web/API/Element/outerHTML
+    */
+    localStorage.setItem(KEY_SAVEDATA, JSON.stringify(doc.body.outerHTML));
 });
-*/

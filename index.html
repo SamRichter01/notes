@@ -11,8 +11,14 @@
             <h1>Notes App</h1>
         </header>
         <main>
-            <div id="fileArea"></div>
-            <div id="noteArea">
+            <div id="fileNav"></div>
+            <div id="editor">
+                <div id="toolbar">
+                    <button id="saveBtn">Save</button>
+                    <button id="boldBtn"><b>B</b></button>
+                    <button id="italicsBtn"><i>I</i></button>
+                    <button id="underlineBtn"><u>U</u></button>
+                </div>
                 <!--The text editor area is contained in an iframe. An iframe contains a separate html document that can be edited
                 documentation: https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement-->
                  <iframe id="edit"></iframe>
