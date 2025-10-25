@@ -73,23 +73,29 @@ b.addEventListener('click', () => {
     if (sel.startContainer.nodeName === TEXT_NODE && topContainer.length === 0) {
         sel.surroundContents(document.createElement('b'));
     } else {
-        boldRecursively(sel.commonAncestorContainer);
+        boldRecursively(sel, sel.commonAncestorContainer);
     }
 });
 
-function boldRecursively (node) {
+// Return true if any of the elements were bolded. If true, call the unbold function(?)
+
+// If any text elements were encountered, the function should return true. 
+function boldRecursively (startRange, node) {
     console.log(node);
+    if (node.nodeName === 'B') {
+        return -1;
+    }
     if (node.childNodes.length > 0) {
         for (let i = 0; i < node.childNodes.length; i++) {
-            i++;
-            boldRecursively(node.childNodes[i - 1]);
+            boldRecursively(startRange, node.childNodes[i]);
         }
     }
-    if (node.nodeName === TEXT_NODE) {
+    if (node.nodeName === TEXT_NODE && (startRange.isPointInRange(node, 0) || node === startRange.startContainer)) {
         let range = document.createRange();
-        range.setStart(node, 0);
-        range.setEnd(node, node.length - 1);
+        range.setStartBefore(node);
+        range.setEndAfter(node);
         range.surroundContents(document.createElement('b'));
+        return 1;
     }
-    return;
+    return 0;
 }
