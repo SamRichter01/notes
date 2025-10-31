@@ -6,6 +6,7 @@
 const KEY_SAVEDATA = 'note';
 
 const TEXT_NODE = '#text';
+const BOLD_NODE = 'B';
 
 const e = document.getElementById('edit');
 let win = e.contentWindow;
@@ -73,29 +74,118 @@ b.addEventListener('click', () => {
     if (sel.startContainer.nodeName === TEXT_NODE && topContainer.length === 0) {
         sel.surroundContents(document.createElement('b'));
     } else {
-        boldRecursively(sel, sel.commonAncestorContainer);
+        // Gather an array of all the text and bold nodes.
+        let stack = [];
+        stack = gatherNodes(sel, sel.commonAncestorContainer, stack).reverse()
+
+        // Check to see if the array contains any text nodes. If it does, that means they need to be bolded.
+        if(stack.some(node => node.nodeName === TEXT_NODE)) {
+            makeStuffBold(sel, stack);
+        } else {
+            //makeStuffLessBold();
+        }
     }
 });
 
-// Return true if any of the elements were bolded. If true, call the unbold function(?)
+// Iterate over the selection recursively and return a stack that contains all of the affected nodes
+function gatherNodes (startRange, node, stack) {
 
-// If any text elements were encountered, the function should return true. 
-function boldRecursively (startRange, node) {
-    console.log(node);
-    if (node.nodeName === 'B') {
-        return -1;
+    // If the node is bold return immediately
+    if (node.nodeName === BOLD_NODE) {
+        stack.push(node);
+        return stack;
     }
-    if (node.childNodes.length > 0) {
-        for (let i = 0; i < node.childNodes.length; i++) {
-            boldRecursively(startRange, node.childNodes[i]);
+    
+    // If the node has a sibling, check it.
+    if (node.nextSibling !== null) {
+        // Gather the nodes to the right of the current one.
+        stack = gatherNodes(startRange, node.nextSibling, stack);
+    }
+
+    // Check the node's children
+    if (node.firstChild !== null) {
+        stack = gatherNodes(startRange, node.firstChild, stack);
+    }
+
+    // If the node is a text or bold node, push it to the stack.
+    if (node.nodeName === TEXT_NODE) {
+        stack.push(node);
+    }
+    return stack;
+}
+
+// Go through the stack and make everything bold.
+function makeStuffBold (range, stack) {
+
+    for (let i = 0; i < stack.length; i++) {
+        let node = stack[i];
+        
+        // If the node is the front of the range, handle it separately.
+        if (node === range.startContainer) {
+            
+            // Split the text node in twain
+            let newNode = node.splitText(range.startOffset);
+
+            // Create a new range around the new node so we can wrap it in a tag
+            let newRange = document.createRange();
+            newRange.setStartBefore(newNode);
+            newRange.setEndAfter(newNode);
+
+            // Wrap the node in a tag
+            newRange.surroundContents(document.createElement(BOLD_NODE));
+
+            continue;
         }
+
+        // If the node is the end of the range, handle it separately.
+        if (node === range.endContainer) {
+            
+            let text = node.wholeText;
+            let newText = text.substring(0, range.endOffset);
+            let secondText = text.substring(range.endOffset);
+            let newNode = new Text(newText);
+            let secondNode = new Text(secondText);
+
+            let tempStart = range.startContainer;
+            let tempStartOffset = range.startOffset;
+            let tempEnd = range.endContainer;
+
+            range.setStart(tempEnd, 0);
+            range.setEndAfter(tempEnd);
+
+            node.remove();
+
+            range.insertNode(secondNode);
+            range.insertNode(newNode);
+
+            range.setStart(tempStart, tempStartOffset);
+            
+            // Create a new range around the new node so we can wrap it in a tag
+            let newRange = document.createRange();
+            newRange.setStartBefore(newNode);
+            newRange.setEndAfter(newNode);
+
+            // Wrap the node in a tag
+            newRange.surroundContents(document.createElement(BOLD_NODE));
+
+            continue;
+        }
+
+        // Ignore non-text nodes and nodes outside of the range. 
+        if (node.nodeName !== TEXT_NODE || 
+            range.comparePoint(node, 0) !== 0 || 
+            range.comparePoint(node, node.wholeText.length) !== 0) {
+            continue;
+        }
+        
+        // Create a new range around the new node so we can wrap it in a tag
+        let newRange = document.createRange();
+        newRange.setStartBefore(node);
+        newRange.setEndAfter(node);
+
+        // Wrap the node in a tag
+        newRange.surroundContents(document.createElement(BOLD_NODE));
     }
-    if (node.nodeName === TEXT_NODE && (startRange.isPointInRange(node, 0) || node === startRange.startContainer)) {
-        let range = document.createRange();
-        range.setStartBefore(node);
-        range.setEndAfter(node);
-        range.surroundContents(document.createElement('b'));
-        return 1;
-    }
-    return 0;
+
+    // Wrap the node in a <b> tag.
 }
