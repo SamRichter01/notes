@@ -14,9 +14,7 @@
  */
 class noteNode {
     
-    constructor (content, name, parentNode, layer) {
-        // Ignore parentNode because I don't need to do a whole tree thing yet.
-        //this.parentNode = parentNode;
+    constructor (content, name, layer) {
         this.content = content;
         this.name = name;
         this.creationDate = Date.now();

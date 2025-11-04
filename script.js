@@ -30,6 +30,8 @@ let currentNote;
 b.disabled = true;
 i.disabled = true;
 u.disabled = true;
+// The save button is disabled now that I've implemented autosaving.
+s.disabled = true;
 
 /**
  * Parentheses around the function denote is as an Immediately Invoked Function Expression (IIFE)
@@ -56,7 +58,7 @@ function retrieveSaveData () {
     root = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? new noteNode('', 'Untitled Note', null, 0);
     //root = new noteNode('', 'Untitled Note', null, 0)
     currentNote = root;
-    resetEditor(root);
+    resetEditor();
 }
 
 // Build the file tree.
@@ -67,16 +69,26 @@ function buildFileTree() {
 
 // Build the file tree children recursively
 function buildRecursively (node) {
+    // Create a new list element for the file navigator
     let li = document.createElement('li');
 
+    // Indent the name according to how many layers deep it is
     let indentations = '';
     for (let i = 0; i < node.layer; i++) {
         indentations = indentations.concat('| ');
     }
     
     li.append(indentations.concat(node.name));
+
+    // Attach the note's timestamp to the list element to identify the element as belonging to that note
     li.setAttribute('timestamp', node.creationDate);
 
+    // If the list element is the currently selected one, bold it
+    if (parseInt(li.getAttribute('timestamp')) === currentNote.creationDate) {
+        li.style.fontWeight = 'bold';
+    }
+
+    // Select note code
     li.addEventListener('click', (e) => {
         saveNote();
         findRecursively(root, parseInt(e.target.getAttribute('timestamp')));
@@ -104,14 +116,28 @@ function findRecursively(node, timestamp) {
     }
 }
 
-function resetEditor () {
+function deleteRecursively(node, timestamp) {
+    let index = node.children.findIndex(childNode => childNode.creationDate === timestamp);
+    if (index !== -1) {
+        node.children.splice(index, 1);
+        return node;
+    }
+    node.children.forEach((childNode) => {
+        return deleteRecursively(childNode, timestamp);
+    });
+    if (node === root) {
+        return node;
+    } 
+}
+
+function resetEditor() {
     doc.open();
     doc.write(currentNote.content);
     doc.close();
     t.value = currentNote.name;
 }
 
-function saveNote () {
+function saveNote() {
     /**
      * Grab the outerHTML from the document as a string and save it to the currentNote.
      * This is apparently a potential XSS vector so I'll probably have to implement sanitation.
@@ -125,16 +151,19 @@ function saveNote () {
 }
 
 
+/**
+ * Event listeners
+ */
 
 // New Note Button
 n.addEventListener('click', () => {
     saveNote();
     
-    let newNote = new noteNode('', 'Untitled Note', currentNote, currentNote.layer + 1);
+    let newNote = new noteNode('', 'Untitled Note', currentNote.layer + 1);
     currentNote.children.push(newNote);
     currentNote = newNote;
 
-    resetEditor(currentNote);
+    resetEditor();
 
     saveNote();
 
@@ -146,6 +175,49 @@ s.addEventListener('click', () => {
     saveNote();
     buildFileTree();
 });
+
+// Delete Button
+d.addEventListener('click', () => {
+    let current = currentNote.creationDate;
+    console.log(parent);
+    currentNote = deleteRecursively(root, current);
+    resetEditor();
+    buildFileTree();
+});
+
+t.addEventListener('input', () => {
+    saveNote();
+    buildFileTree();
+});
+
+
+/**
+ * Setting up a mutation observer to detect changes within the iframe's dom to autosave notes.
+ */
+
+// Select the node that will be observed for mutations
+const targetNode = doc;
+
+// Options for the observer (which mutations to observe)
+const config = { characterData: true, childList: true, subtree: true };
+
+// Callback function to execute when mutations are observed
+const callback = (mutationList, observer) => {
+  for (const mutation of mutationList) {
+    saveNote();
+  }
+};
+
+// Create an observer instance linked to the callback function
+const observer = new MutationObserver(callback);
+
+// Start observing the target node for configured mutations
+observer.observe(targetNode, config);
+
+
+/**
+ * Rich text functions
+ */
 
 // Bold button
 b.addEventListener('click', () => {
