@@ -40,6 +40,7 @@ footer {
 #fileNav {
     width: 20%;
     background-color: #dddddd;
+    padding: 8px;
 }
 
 #editor {
@@ -49,6 +50,7 @@ footer {
 }
 
 #toolbar {
+    display: block;
     width: 100%;
     min-height: 40px;
     height: 10%;
@@ -61,3 +63,8 @@ footer {
     height: 400px;
     border: 2px solid black;
 }
+
+#titleInput {
+    width: 180px;
+}
+

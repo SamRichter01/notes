@@ -15,6 +15,21 @@ const b = document.getElementById('boldBtn');
 const i = document.getElementById('italicsBtn');
 const u = document.getElementById('underlineBtn');
 const s = document.getElementById('saveBtn');
+const n = document.getElementById('newBtn');
+const d = document.getElementById('deleteBtn');
+const t = document.getElementById('titleInput');
+const fileList = document.getElementById('fileList');
+
+// Root node for the file tree
+let root = new noteNode('', 'Untitled Note', null);
+let currentNote;
+
+/**
+ * Disable non-functional buttons
+ */
+b.disabled = true;
+i.disabled = true;
+u.disabled = true;
 
 /**
  * Parentheses around the function denote is as an Immediately Invoked Function Expression (IIFE)
@@ -24,43 +39,115 @@ const s = document.getElementById('saveBtn');
     // Set the document within #edit to be editable
     doc.designMode = 'on';
 
-    // Load saved data from localStorage
-    // The document can be written to using the string form of the html we grabbed with the save button
-    let saveData = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? '';
-    doc.open();
-    doc.write(saveData);
-    doc.close();
+    // Retrieve the saved data
+    retrieveSaveData();
+
+    // Build the file tree
+    buildFileTree();
 })();
+
+/**
+ * Load saved data from localStorage
+ * Check if 
+ */ 
+function retrieveSaveData () {
+    
+    // The document can be written to using the string form of the html we grabbed with the save button
+    root = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? new noteNode('', 'Untitled Note', null, 0);
+    //root = new noteNode('', 'Untitled Note', null, 0)
+    currentNote = root;
+    resetEditor(root);
+}
+
+// Build the file tree.
+function buildFileTree() {
+    fileList.replaceChildren();
+    buildRecursively(root);
+}
+
+// Build the file tree children recursively
+function buildRecursively (node) {
+    let li = document.createElement('li');
+
+    let indentations = '';
+    for (let i = 0; i < node.layer; i++) {
+        indentations = indentations.concat('| ');
+    }
+    
+    li.append(indentations.concat(node.name));
+    li.setAttribute('timestamp', node.creationDate);
+
+    li.addEventListener('click', (e) => {
+        saveNote();
+        findRecursively(root, parseInt(e.target.getAttribute('timestamp')));
+        resetEditor();
+        fileList.childNodes.forEach((node) => {
+            node.style.fontWeight = 'normal';
+        });
+        e.target.style.fontWeight = 'bold';
+    });
+
+    fileList.appendChild(li);
+    
+    node.children.forEach((node) => {
+        buildRecursively(node);
+    });
+}
+
+function findRecursively(node, timestamp) {
+    if (node.creationDate === timestamp) {
+        currentNote = node;
+    } else {
+        node.children.forEach((childNode) => {
+            return findRecursively(childNode, timestamp);
+        });
+    }
+}
+
+function resetEditor () {
+    doc.open();
+    doc.write(currentNote.content);
+    doc.close();
+    t.value = currentNote.name;
+}
+
+function saveNote () {
+    /**
+     * Grab the outerHTML from the document as a string and save it to the currentNote.
+     * This is apparently a potential XSS vector so I'll probably have to implement sanitation.
+     * See this link for more: https://developer.mozilla.org/en-US/docs/Web/API/Element/outerHTML
+     * 
+     * Save the root node to localStorage
+    */
+    currentNote.name = t.value;
+    currentNote.content = doc.body.outerHTML;
+    localStorage.setItem(KEY_SAVEDATA, JSON.stringify(root));
+}
+
+
+
+// New Note Button
+n.addEventListener('click', () => {
+    saveNote();
+    
+    let newNote = new noteNode('', 'Untitled Note', currentNote, currentNote.layer + 1);
+    currentNote.children.push(newNote);
+    currentNote = newNote;
+
+    resetEditor(currentNote);
+
+    saveNote();
+
+    buildFileTree();
+});
 
 // Save button
 s.addEventListener('click', () => {
-    /**
-     * Grab the outerHTML from the document as a string and send it to localStorage.
-     * This is apparently a potential XSS vector so I'll probably have to implement sanitation.
-     * See this link for more: https://developer.mozilla.org/en-US/docs/Web/API/Element/outerHTML
-    */
-    localStorage.setItem(KEY_SAVEDATA, JSON.stringify(doc.body.outerHTML));
+    saveNote();
+    buildFileTree();
 });
 
 // Bold button
-/**
-selection = win.getSelection();  
-
-if selection.isCollapsed {  
-    // Nothing is selected so there's nothing to bold. Return.  
-}  
-
-// Get the first (and probably only) range in the selection. 
-range = selection.getRangeAt(0) 
-
-Loop through the nodes in top container {
-
-    If the node is a text node {
-
-        Create a new range with the start of the text node
-    } 
-}
-*/
 b.addEventListener('click', () => {
     
     // Get the Range object from the selection
