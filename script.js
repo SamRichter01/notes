@@ -19,6 +19,7 @@ const n = document.getElementById('newBtn');
 const d = document.getElementById('deleteBtn');
 const t = document.getElementById('titleInput');
 const fileList = document.getElementById('fileList');
+const date = document.getElementById('createdDate');
 
 // Root node for the file tree
 let root = new noteNode('', 'Untitled Note', null);
@@ -64,28 +65,26 @@ function retrieveSaveData () {
 // Build the file tree.
 function buildFileTree() {
     fileList.replaceChildren();
-    buildRecursively(root);
+    fileList.append(buildRecursively(root));
 }
 
 // Build the file tree children recursively
 function buildRecursively (node) {
-    // Create a new list element for the file navigator
+
+     // Create a new list element for the file navigator
     let li = document.createElement('li');
 
-    // Indent the name according to how many layers deep it is
-    let indentations = '';
-    for (let i = 0; i < node.layer; i++) {
-        indentations = indentations.concat('| ');
-    }
-    
-    li.append(indentations.concat(node.name));
+    // Sets the text of the node to be its name
+    li.textContent = node.name;
 
     // Attach the note's timestamp to the list element to identify the element as belonging to that note
     li.setAttribute('timestamp', node.creationDate);
 
     // If the list element is the currently selected one, bold it
     if (parseInt(li.getAttribute('timestamp')) === currentNote.creationDate) {
-        li.style.fontWeight = 'bold';
+        li.className = 'selectedFile';
+    } else {
+        li.className = 'nonSelectedFile';
     }
 
     // Select note code
@@ -93,17 +92,25 @@ function buildRecursively (node) {
         saveNote();
         findRecursively(root, parseInt(e.target.getAttribute('timestamp')));
         resetEditor();
-        fileList.childNodes.forEach((node) => {
-            node.style.fontWeight = 'normal';
-        });
-        e.target.style.fontWeight = 'bold';
+        for (const childNode of getAllDescendants(fileList)) {
+            childNode.className = 'nonSelectedFile'
+        }
+        e.target.className = 'selectedFile';
     });
 
-    fileList.appendChild(li);
-    
-    node.children.forEach((node) => {
-        buildRecursively(node);
-    });
+    // Check if the node has children
+    if (node.children.length > 0) {
+        // Create a new ul for the child notes to live in
+        let ul = document.createElement('ul');
+        // For every child node, append the result of buildRecursively()
+        for (const childNode of node.children) {
+            ul.append(buildRecursively(childNode));
+        }
+        // Add the ul to the original list item
+        li.append(ul);
+    }
+
+    return li;
 }
 
 function findRecursively(node, timestamp) {
@@ -130,11 +137,25 @@ function deleteRecursively(node, timestamp) {
     } 
 }
 
+/**
+ * Grabbed from: https://stackoverflow.com/questions/8321874/how-to-get-all-childnodes-in-js-including-all-the-grandchildren
+ * I've read up on how it works but couldn't replicate it myself.
+ * I think it might be applicable to the list tree, but I don't have a use case for it yet.
+*/
+function getAllDescendants(node) {
+    return (!node) ? [] : [...node.childNodes, ...Array.from(node.childNodes).flatMap(child => getAllDescendants(child))];
+}
+
+
 function resetEditor() {
     doc.open();
     doc.write(currentNote.content);
     doc.close();
     t.value = currentNote.name;
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+    let dateValue = new Date()
+    dateValue.value = currentNote.creationDate
+    date.textContent = ('Created: ').concat(dateValue.toLocaleString("en-US", options));
 }
 
 function saveNote() {
