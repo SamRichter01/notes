@@ -7,6 +7,9 @@ const KEY_SAVEDATA = 'note';
 
 const TEXT_NODE = '#text';
 const BOLD_NODE = 'B';
+const FOLDER = 'folder';
+const NOTE = 'note';
+const BUCKET = 'bucket';
 
 const e = document.getElementById('edit');
 let win = e.contentWindow;
@@ -16,13 +19,15 @@ const i = document.getElementById('italicsBtn');
 const u = document.getElementById('underlineBtn');
 const s = document.getElementById('saveBtn');
 const n = document.getElementById('newBtn');
+const f = document.getElementById('newFolderBtn');
 const d = document.getElementById('deleteBtn');
 const t = document.getElementById('titleInput');
 const fileList = document.getElementById('fileList');
+let fileBox = document.getElementById('fileBox');
 const date = document.getElementById('createdDate');
 
 // Root node for the file tree
-let root = new noteNode('', 'Untitled Note', null);
+let root;
 let currentNote;
 
 /**
@@ -54,10 +59,8 @@ s.disabled = true;
  * Check if 
  */ 
 function retrieveSaveData () {
-    
     // The document can be written to using the string form of the html we grabbed with the save button
-    root = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? new noteNode('', 'Untitled Note', null, 0);
-    //root = new noteNode('', 'Untitled Note', null, 0)
+    root = JSON.parse(localStorage.getItem(KEY_SAVEDATA)) ?? new noteNode(BUCKET, '', '');
     currentNote = root;
     resetEditor();
 }
@@ -65,7 +68,9 @@ function retrieveSaveData () {
 // Build the file tree.
 function buildFileTree() {
     fileList.replaceChildren();
-    fileList.append(buildRecursively(root));
+    for (node of root.children) {
+        fileList.append(buildRecursively(node));
+    }
 }
 
 // Build the file tree children recursively
@@ -80,22 +85,22 @@ function buildRecursively (node) {
     // Attach the note's timestamp to the list element to identify the element as belonging to that note
     li.setAttribute('timestamp', node.creationDate);
 
+    li.className = node.type;
+
     // If the list element is the currently selected one, bold it
     if (parseInt(li.getAttribute('timestamp')) === currentNote.creationDate) {
-        li.className = 'selectedFile';
+        li.className = li.className.concat(' selected');
     } else {
-        li.className = 'nonSelectedFile';
+        li.className = li.className.concat(' nonSelected');
     }
 
     // Select note code
     li.addEventListener('click', (e) => {
-        saveNote();
+        e.stopPropagation();
+        save();
         findRecursively(root, parseInt(e.target.getAttribute('timestamp')));
+        buildFileTree();
         resetEditor();
-        for (const childNode of getAllDescendants(fileList)) {
-            childNode.className = 'nonSelectedFile'
-        }
-        e.target.className = 'selectedFile';
     });
 
     // Check if the node has children
@@ -132,9 +137,7 @@ function deleteRecursively(node, timestamp) {
     node.children.forEach((childNode) => {
         return deleteRecursively(childNode, timestamp);
     });
-    if (node === root) {
-        return node;
-    } 
+    return;
 }
 
 /**
@@ -149,16 +152,34 @@ function getAllDescendants(node) {
 
 function resetEditor() {
     doc.open();
-    doc.write(currentNote.content);
+    if (currentNote.type === BUCKET) {
+        e.style.display = 'none'
+        d.disabled = true;
+        t.disabled = true;
+        f.disabled = false;
+        date.hidden = true;
+    } else {
+        if (currentNote.type === NOTE) {
+            doc.write(currentNote.content);
+            e.style.display = 'initial'
+            f.disabled = true;
+        } else if (currentNote.type === FOLDER) {
+            e.style.display = 'none'
+            f.disabled = false;
+        }
+        d.disabled = false;
+        t.disabled = false;
+        date.hidden = false;
+    } 
     doc.close();
     t.value = currentNote.name;
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-    let dateValue = new Date()
-    dateValue.value = currentNote.creationDate
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    let dateValue = new Date();
+    dateValue.value = currentNote.creationDate;
     date.textContent = ('Created: ').concat(dateValue.toLocaleString("en-US", options));
 }
 
-function saveNote() {
+function save() {
     /**
      * Grab the outerHTML from the document as a string and save it to the currentNote.
      * This is apparently a potential XSS vector so I'll probably have to implement sanitation.
@@ -166,8 +187,10 @@ function saveNote() {
      * 
      * Save the root node to localStorage
     */
+    if (currentNote.type === NOTE) {
+        currentNote.content = doc.body.outerHTML;
+    }
     currentNote.name = t.value;
-    currentNote.content = doc.body.outerHTML;
     localStorage.setItem(KEY_SAVEDATA, JSON.stringify(root));
 }
 
@@ -178,37 +201,53 @@ function saveNote() {
 
 // New Note Button
 n.addEventListener('click', () => {
-    saveNote();
-    
-    let newNote = new noteNode('', 'Untitled Note', currentNote.layer + 1);
+    save();
+    let newNote = new noteNode('note', '', 'Untitled Note');
     currentNote.children.push(newNote);
     currentNote = newNote;
-
     resetEditor();
+    save();
+    buildFileTree();
+});
 
-    saveNote();
-
+// New Folder Button
+f.addEventListener('click', () => {
+    if (currentNote.type === NOTE) {
+        return;
+    }
+    save();
+    let newFolder = new noteNode(FOLDER, '', 'Untitled Folder');
+    currentNote.children.push(newFolder);
+    currentNote = newFolder;
+    resetEditor();
+    save();
     buildFileTree();
 });
 
 // Save button
 s.addEventListener('click', () => {
-    saveNote();
+    save();
     buildFileTree();
 });
 
 // Delete Button
 d.addEventListener('click', () => {
-    let current = currentNote.creationDate;
-    console.log(parent);
-    currentNote = deleteRecursively(root, current);
+    currentNote = deleteRecursively(root, currentNote.creationDate);
     resetEditor();
     buildFileTree();
 });
 
+// Save on title change
 t.addEventListener('input', () => {
-    saveNote();
+    save();
     buildFileTree();
+});
+
+// Select root node when clicking outside of note list
+fileBox.addEventListener('click', () => {
+    currentNote = root;
+    buildFileTree();
+    resetEditor();
 });
 
 
@@ -225,7 +264,7 @@ const config = { characterData: true, childList: true, subtree: true };
 // Callback function to execute when mutations are observed
 const callback = (mutationList, observer) => {
   for (const mutation of mutationList) {
-    saveNote();
+    save();
   }
 };
 

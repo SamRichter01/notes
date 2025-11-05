@@ -54,7 +54,6 @@ li {
     min-width: 180px;
     width: 20%;
     background-color: #dddddd;
-    padding: 8px;
 }
 
 #editor {
@@ -75,22 +74,40 @@ li {
     display: inline;
     width: 100%;
     height: calc(100% - 40px);
-    border: 2px solid black;
+    /* border: 2px solid black; */
 }
 
 #titleInput {
     width: 180px;
 }
 
-#fileList {
-    padding: 0;
+#fileBar {
+    height: 40px;
+    padding: 8px;
 }
 
-.selectedFile {
+#fileBox {
+    width: 100%;
+    height: calc(100% - 40px);
+}
+
+#fileList {
+    padding: 8px;
+}
+
+.note {
+    font-style: normal;
+}
+
+.folder {
+    font-style: italic;
+}
+
+.selected {
     font-weight: bold;
 }
 
-.nonSelectedFile {
+.nonSelected {
     font-weight: normal;
 }
 

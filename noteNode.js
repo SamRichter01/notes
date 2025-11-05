@@ -14,12 +14,12 @@
  */
 class noteNode {
     
-    constructor (content, name, layer) {
+    constructor (type, content, name) {
+        this.type = type;
         this.content = content;
         this.name = name;
         this.creationDate = Date.now();
         this.children = [];
-        this.layer = layer;
     }
 
 
