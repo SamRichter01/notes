@@ -7,6 +7,7 @@ const KEY_SAVEDATA = 'note';
 
 const TEXT_NODE = '#text';
 const BOLD_NODE = 'B';
+
 const FOLDER = 'folder';
 const NOTE = 'note';
 const BUCKET = 'bucket';
@@ -137,7 +138,7 @@ function deleteRecursively(node, timestamp) {
     node.children.forEach((childNode) => {
         return deleteRecursively(childNode, timestamp);
     });
-    return;
+    return node;
 }
 
 /**
