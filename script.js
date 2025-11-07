@@ -96,12 +96,54 @@ function buildRecursively (node) {
     }
 
     // Select note code
-    li.addEventListener('click', (e) => {
-        e.stopPropagation();
+    li.addEventListener('click', (event) => {
+        event.stopPropagation();
         save();
-        findRecursively(root, parseInt(e.target.getAttribute('timestamp')));
+        findRecursively(root, parseInt(event.target.getAttribute('timestamp')));
         buildFileTree();
         resetEditor();
+    });
+
+    /**
+    * Drag and drop code
+    */
+    li.draggable = 'true';
+
+    li.addEventListener('dragstart', (event) => {
+        // Only allow a move operation and update the cursor to reflect that
+        event.dataTransfer.effectAllowed = "move";
+
+        // Attach the list item's timestamp to the drag data to be transferred
+        console.log(event.target.getAttribute('timestamp'));
+        event.dataTransfer.items.add(event.target.getAttribute('timestamp'), "text/plain");
+
+        event.stopPropagation();
+    });
+
+    // Cancel dragover so that drop can fire
+    li.addEventListener("dragover", (event) => {
+        event.preventDefault();
+    });
+
+    li.addEventListener('drop', (event) => {
+        event.stopPropagation();
+        
+        let originNodeTimestamp;
+
+        originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
+        // Get the original node's timestamp 
+        for (const item of event.dataTransfer.items) {
+            if (item.kind === "string") {
+                item.getAsString((data) => {
+                    originNodeTimestamp = parseInt(data);
+                    //console.log(originNodeTimestamp);
+                });
+            }
+        }
+
+        let originNode = dragRecursively(root, originNodeTimestamp);  
+        dropRecursively(root, parseInt(event.target.getAttribute('timestamp')), originNode);
+        buildFileTree();    
     });
 
     // Check if the node has children
@@ -117,6 +159,30 @@ function buildRecursively (node) {
     }
 
     return li;
+}
+
+function dragRecursively(node, timestamp) {
+    let index = node.children.findIndex(childNode => childNode.creationDate === timestamp);
+    if (index !== -1) {
+        let draggedNode = node.children[index];
+        node.children.splice(index, 1);
+        return draggedNode;
+    } else {
+        for (childNode of node.children) {
+            return dragRecursively(childNode, timestamp)
+        }
+    }
+    return null;
+}
+
+function dropRecursively(node, timestamp, originNode) {
+    if (node.creationDate === timestamp) {
+            node.children.push(originNode);
+    } else {
+        node.children.forEach((childNode) => {
+            return dropRecursively(childNode, timestamp, originNode);
+        });
+    }
 }
 
 function findRecursively(node, timestamp) {
@@ -164,9 +230,11 @@ function resetEditor() {
             doc.write(currentNote.content);
             e.style.display = 'initial'
             f.disabled = true;
+            n.disabled = true;
         } else if (currentNote.type === FOLDER) {
             e.style.display = 'none'
             f.disabled = false;
+            n.disabled = false;
         }
         d.disabled = false;
         t.disabled = false;
@@ -202,6 +270,9 @@ function save() {
 
 // New Note Button
 n.addEventListener('click', () => {
+    if (currentNote.type === NOTE) {
+        return;
+    }
     save();
     let newNote = new noteNode('note', '', 'Untitled Note');
     currentNote.children.push(newNote);
