@@ -48,3 +48,19 @@ In order to enable autosaving I needed to find a way to detect changes in my ifr
 * I still really want to investigate creating a server layer, and maybe even live collaborative editing through WebHooks. That's alot to do in 5 weeks so it'll probably have to be something I do after this class is done.
 
 [Once again here's the link to my repo with my in-the-moment notes in the wiki](https://github.com/SamRichter01/notes)
+
+# Week 11 Reflection
+
+## Reflection Questions
+
+* I added a manifest.json file, a serviceworker.js file, and a script that registers the serviceworker. The manifest.json file contains settings and data that the browser looks for to determine if the application is a PWA and how it should be configured. Serviceworker.js contains a script that is registered by the script in index.html as a serviceworker object. The serviceworker script handles caching for offline fucntionality when the server/browser isn't running.
+* I tested the offline functionality by opening the application in the browser and installing it. I first tested it by shutting off the server and closing the browser to see if the data still saved to localstorage. I then used the devtools network simulator to test if it would work in truly offline mode.
+* Initially I thought that the serviceWorker was not necessary for offline functionality, but I realized it was required to save data between offline and online sessions. I also had an issue where my noteNode.js file was not cached. Fortunately I was able to identify the problem. 
+
+## Progress
+
+* On top of my progress with the PWA conversion, I got basic drag and drop functionality working in my file explorer. There is still a lot missing; files can be dragged into themselves which causes an error, and I'd like to be able to order files by dragging.
+
+## Problems
+
+* My problems this week were human problems. Through a mix of being busy and procrastinating I only completed about 2 hours of kcoding wor.
