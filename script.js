@@ -86,10 +86,12 @@ function buildRecursively (node) {
     // Attach the note's timestamp to the list element to identify the element as belonging to that note
     li.setAttribute('timestamp', node.creationDate);
 
+    li.note = node;
+
     li.className = node.type;
 
     // If the list element is the currently selected one, bold it
-    if (parseInt(li.getAttribute('timestamp')) === currentNote.creationDate) {
+    if (parseInt(li.note.creationDate) === currentNote.creationDate) {
         li.className = li.className.concat(' selected');
     } else {
         li.className = li.className.concat(' nonSelected');
@@ -99,7 +101,7 @@ function buildRecursively (node) {
     li.addEventListener('click', (event) => {
         event.stopPropagation();
         save();
-        findRecursively(root, parseInt(event.target.getAttribute('timestamp')));
+        findRecursively(root, parseInt(event.target.note.creationDate));
         buildFileTree();
         resetEditor();
     });
@@ -114,8 +116,8 @@ function buildRecursively (node) {
         event.dataTransfer.effectAllowed = "move";
 
         // Attach the list item's timestamp to the drag data to be transferred
-        console.log(event.target.getAttribute('timestamp'));
-        event.dataTransfer.items.add(event.target.getAttribute('timestamp'), "text/plain");
+        console.log(event.target.note.creationDate);
+        event.dataTransfer.items.add(event.target.note.creationDate, "text/plain");
 
         event.stopPropagation();
     });
@@ -127,22 +129,22 @@ function buildRecursively (node) {
 
     li.addEventListener('drop', (event) => {
         event.stopPropagation();
-        
-        let originNodeTimestamp;
 
-        originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
-        // Get the original node's timestamp 
-        for (const item of event.dataTransfer.items) {
-            if (item.kind === "string") {
-                item.getAsString((data) => {
-                    originNodeTimestamp = parseInt(data);
-                    //console.log(originNodeTimestamp);
-                });
-            }
+        const originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
+
+        // TODO: If the origin node is the same as the current node, don't do anything.
+        if (originNodeTimestamp === li.note.creationDate || li.note.type === NOTE) {
+            return;
         }
 
-        let originNode = dragRecursively(root, originNodeTimestamp);  
-        dropRecursively(root, parseInt(event.target.getAttribute('timestamp')), originNode);
+        let originNode = dragRecursively(root, originNodeTimestamp, event.target.note); 
+        console.log(originNode);
+
+        if (event.target.id === 'fileList') {
+            dropRecursively(root, root.creationDate, originNode);
+        } else {
+            dropRecursively(root, event.target.note.creationDate, originNode);
+        }
         buildFileTree();    
     });
 
@@ -161,7 +163,7 @@ function buildRecursively (node) {
     return li;
 }
 
-function dragRecursively(node, timestamp) {
+function dragRecursively(node, timestamp, originNode) {
     let index = node.children.findIndex(childNode => childNode.creationDate === timestamp);
     if (index !== -1) {
         let draggedNode = node.children[index];
@@ -169,10 +171,10 @@ function dragRecursively(node, timestamp) {
         return draggedNode;
     } else {
         for (childNode of node.children) {
-            return dragRecursively(childNode, timestamp)
+            return dragRecursively(childNode, timestamp);
         }
     }
-    return null;
+    return null
 }
 
 function dropRecursively(node, timestamp, originNode) {
@@ -184,6 +186,23 @@ function dropRecursively(node, timestamp, originNode) {
         });
     }
 }
+
+/**
+ * Event listeners for the root folder 
+ */
+fileList.addEventListener("dragover", (event) => {
+    event.preventDefault();
+});
+
+fileList.addEventListener('drop', (event) => {
+    event.stopPropagation();
+
+    const originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
+
+    let originNode = dragRecursively(root, originNodeTimestamp);  
+    dropRecursively(root, root.creationDate, originNode);
+    buildFileTree();    
+});
 
 function findRecursively(node, timestamp) {
     if (node.creationDate === timestamp) {
@@ -231,10 +250,12 @@ function resetEditor() {
             e.style.display = 'initial'
             f.disabled = true;
             n.disabled = true;
+            b.disabled = false;
         } else if (currentNote.type === FOLDER) {
             e.style.display = 'none'
             f.disabled = false;
             n.disabled = false;
+            b.disabled = true;
         }
         d.disabled = false;
         t.disabled = false;
