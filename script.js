@@ -12,9 +12,11 @@ const FOLDER = 'folder';
 const NOTE = 'note';
 const BUCKET = 'bucket';
 
+// Editing iframe and its sub-elements
 const e = document.getElementById('edit');
 let win = e.contentWindow;
 let doc = win.document;
+
 const b = document.getElementById('boldBtn');
 const i = document.getElementById('italicsBtn');
 const u = document.getElementById('underlineBtn');
@@ -30,6 +32,11 @@ const date = document.getElementById('createdDate');
 // Root node for the file tree
 let root;
 let currentNote;
+
+// Buffer for the node currently being dragged
+let selectedNodeBuffer = [];
+let dragBuffer = [];
+let lastSelected = null;
 
 /**
  * Disable non-functional buttons
@@ -91,7 +98,7 @@ function buildRecursively (node) {
     li.className = node.type;
 
     // If the list element is the currently selected one, bold it
-    if (parseInt(li.note.creationDate) === currentNote.creationDate) {
+    if (selectedNodeBuffer.findIndex(node => node.note === li.note) !== -1) {
         li.className = li.className.concat(' selected');
     } else {
         li.className = li.className.concat(' nonSelected');
@@ -100,8 +107,51 @@ function buildRecursively (node) {
     // Select note code
     li.addEventListener('click', (event) => {
         event.stopPropagation();
-        save();
-        findRecursively(root, parseInt(event.target.note.creationDate));
+
+        if (lastSelected !== null && event.shiftKey) {
+            // Get every element in the file explorer.
+            let allFiles = getSubFiles(fileList, []).filter(node => node.tagName === 'LI');
+            let start = allFiles.findIndex(node => node.note === lastSelected.note);
+            let end = allFiles.indexOf(event.target);
+            if (start > end) {
+                let temp = end;
+                end = start;
+                start = temp;
+            }
+            selectedNodeBuffer = allFiles.slice(start, end + 1);
+
+            /**
+             * Concatenate the two arrays without duplicates can allow for multiple selection ranges.
+             * Problematically, a naive implemetation just makes everything get selected without overwriting.
+             * I hope to think of a simple solution later.
+             * 
+             * https://medium.com/@rivoltafilippo/javascript-merge-arrays-without-duplicates-3fbd8f4881be
+             * 
+             * const newRange = allFiles.slice(start, end + 1);
+             * selectedNodeBuffer = [...new Set([...selectedNodeBuffer, ...newRange])]
+            */ 
+            
+        } else if (lastSelected !== null && event.ctrlKey) {
+            let index = selectedNodeBuffer.findIndex(node => node.note === event.target.note);
+            if (index > -1) {
+                selectedNodeBuffer.splice(index, 1);
+            } else {
+                selectedNodeBuffer.push(event.target);
+            }
+            lastSelected = event.target;
+        } else {
+             // Clicking between two list items returns the list as a target, so in that case we want to deselect everything.
+            if (event.target.tagName !== 'LI') {
+                selectedNodeBuffer = [];
+                lastSelected = null;
+                currentNote = root;
+            } else {
+                selectedNodeBuffer = [event.target];
+                lastSelected = event.target;
+                currentNote = event.target.note;
+            }
+        }
+       
         buildFileTree();
         resetEditor();
     });
@@ -112,14 +162,18 @@ function buildRecursively (node) {
     li.draggable = 'true';
 
     li.addEventListener('dragstart', (event) => {
+        
+        event.stopPropagation();
+
         // Only allow a move operation and update the cursor to reflect that
         event.dataTransfer.effectAllowed = "move";
 
-        // Attach the list item's timestamp to the drag data to be transferred
-        console.log(event.target.note.creationDate);
-        event.dataTransfer.items.add(event.target.note.creationDate, "text/plain");
-
-        event.stopPropagation();
+        // Insert the note being dragged into the buffer
+        if (selectedNodeBuffer.findIndex(node => node.note === event.target.note) > -1 && selectedNodeBuffer.length > 1) {
+            dragBuffer = grabRecursively(root, selectedNodeBuffer, []);
+        } else {
+            dragBuffer.push(event.target.note);
+        }
     });
 
     // Cancel dragover so that drop can fire
@@ -130,21 +184,21 @@ function buildRecursively (node) {
     li.addEventListener('drop', (event) => {
         event.stopPropagation();
 
-        const originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
-
-        // TODO: If the origin node is the same as the current node, don't do anything.
-        if (originNodeTimestamp === li.note.creationDate || li.note.type === NOTE) {
+        if (selectedNodeBuffer.findIndex(node => node.note === event.target.note) > -1 || event.target.note.type === NOTE) {
+            dragBuffer = [];
             return;
         }
 
-        let originNode = dragRecursively(root, originNodeTimestamp, event.target.note); 
-        console.log(originNode);
-
-        if (event.target.id === 'fileList') {
-            dropRecursively(root, root.creationDate, originNode);
-        } else {
-            dropRecursively(root, event.target.note.creationDate, originNode);
+        for (const note of dragBuffer) {
+            deleteRecursively(root, note.creationDate);
         }
+
+        event.target.note.children.push(...dragBuffer);
+
+        selectedNodeBuffer = [];
+        dragBuffer = [];
+        lastSelected = null;
+
         buildFileTree();    
     });
 
@@ -163,28 +217,15 @@ function buildRecursively (node) {
     return li;
 }
 
-function dragRecursively(node, timestamp, originNode) {
-    let index = node.children.findIndex(childNode => childNode.creationDate === timestamp);
-    if (index !== -1) {
-        let draggedNode = node.children[index];
-        node.children.splice(index, 1);
-        return draggedNode;
-    } else {
-        for (childNode of node.children) {
-            return dragRecursively(childNode, timestamp);
+function grabRecursively(node, buffer, newBuffer) {
+    for (const child of node.children) {
+        if (buffer.findIndex(node => node.note === child) > -1) {
+            newBuffer.push(child);
+            continue;
         }
+        grabRecursively(child, buffer, newBuffer);
     }
-    return null
-}
-
-function dropRecursively(node, timestamp, originNode) {
-    if (node.creationDate === timestamp) {
-            node.children.push(originNode);
-    } else {
-        node.children.forEach((childNode) => {
-            return dropRecursively(childNode, timestamp, originNode);
-        });
-    }
+    return newBuffer;
 }
 
 /**
@@ -197,22 +238,19 @@ fileList.addEventListener("dragover", (event) => {
 fileList.addEventListener('drop', (event) => {
     event.stopPropagation();
 
-    const originNodeTimestamp = parseInt(event.dataTransfer.getData("text/plain"));
+    console.log(dragBuffer);
+    for (const note of dragBuffer) {
+        deleteRecursively(root, note.creationDate);
+    }
 
-    let originNode = dragRecursively(root, originNodeTimestamp);  
-    dropRecursively(root, root.creationDate, originNode);
+    root.children.push(...dragBuffer);
+
+    selectedNodeBuffer = [];
+    dragBuffer = [];
+    lastSelected = null;
+
     buildFileTree();    
 });
-
-function findRecursively(node, timestamp) {
-    if (node.creationDate === timestamp) {
-        currentNote = node;
-    } else {
-        node.children.forEach((childNode) => {
-            return findRecursively(childNode, timestamp);
-        });
-    }
-}
 
 function deleteRecursively(node, timestamp) {
     let index = node.children.findIndex(childNode => childNode.creationDate === timestamp);
@@ -235,6 +273,13 @@ function getAllDescendants(node) {
     return (!node) ? [] : [...node.childNodes, ...Array.from(node.childNodes).flatMap(child => getAllDescendants(child))];
 }
 
+function getSubFiles(node, arr) {
+    arr.push(node);
+    for (child of Array.from(node.childNodes)) {
+        arr = getSubFiles(child, arr);
+    }
+    return arr;
+}
 
 function resetEditor() {
     doc.open();
@@ -325,7 +370,10 @@ s.addEventListener('click', () => {
 
 // Delete Button
 d.addEventListener('click', () => {
-    currentNote = deleteRecursively(root, currentNote.creationDate);
+    let deleteBuffer = grabRecursively(root, selectedNodeBuffer, []);
+    for (const note of deleteBuffer) {
+        deleteRecursively(root, note.creationDate);
+    } 
     resetEditor();
     buildFileTree();
 });
@@ -339,6 +387,8 @@ t.addEventListener('input', () => {
 // Select root node when clicking outside of note list
 fileBox.addEventListener('click', () => {
     currentNote = root;
+    lastSelected = null;
+    selectedNodeBuffer = [];
     buildFileTree();
     resetEditor();
 });
