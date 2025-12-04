@@ -184,7 +184,7 @@ function buildRecursively (node) {
     li.addEventListener('drop', (event) => {
         event.stopPropagation();
 
-        if (selectedNodeBuffer.findIndex(node => node.note === event.target.note) > -1 || event.target.note.type === NOTE) {
+        if (dragBuffer.findIndex(event.target.note) > -1 || event.target.note.type === NOTE) {
             dragBuffer = [];
             return;
         }
@@ -380,6 +380,11 @@ d.addEventListener('click', () => {
 
 // Save on title change
 t.addEventListener('input', () => {
+    // If the value is empty, make no changes.
+    if (t.value === '') {
+        buildFileTree();
+        return;
+    }
     save();
     buildFileTree();
 });
