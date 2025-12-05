@@ -44,9 +44,11 @@ footer {
 ul {
     padding-left: 16px;
     list-style: none;
+    display: block;
 }
 
 li {
+    display: inherit;
     margin: 8px;
 }
 

@@ -165,6 +165,9 @@ function buildRecursively (node) {
         
         event.stopPropagation();
 
+        // Clear the drag buffer
+        dragBuffer = [];
+
         // Only allow a move operation and update the cursor to reflect that
         event.dataTransfer.effectAllowed = "move";
 
@@ -184,7 +187,12 @@ function buildRecursively (node) {
     li.addEventListener('drop', (event) => {
         event.stopPropagation();
 
-        if (dragBuffer.findIndex(event.target.note) > -1 || event.target.note.type === NOTE) {
+        // TODO: IF BEING DRAGGED INTO A NOTE, KEEP BUBBLING THE EVENT UP INSTEAD OF RETURNING?
+        let dragBufferWithChildren = [];
+        for (const node of dragBuffer) {
+            dragBufferWithChildren.push(grabChildrenRecursively(node, dragBufferWithChildren));
+        }
+        if (dragBufferWithChildren.findIndex(note => note === event.target.note) > -1 || event.target.note.type === NOTE) {
             dragBuffer = [];
             return;
         }
@@ -199,6 +207,7 @@ function buildRecursively (node) {
         dragBuffer = [];
         lastSelected = null;
 
+        save();
         buildFileTree();    
     });
 
@@ -210,6 +219,32 @@ function buildRecursively (node) {
         for (const childNode of node.children) {
             ul.append(buildRecursively(childNode));
         }
+        
+        // Attach the expand/minimize button
+        let btn = document.createElement('button');
+        btn.textContent = 'Minimize';
+
+        if (node === root || !node.minimized) {
+            ul.style.display = '';
+        } else {
+            ul.style.display = 'none';
+        }
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let temp = e.target.parentElement.note;
+            temp.minimized = !temp.minimized; 
+            
+            if (!temp.minimized) {
+                ul.style.display = '';
+            } else {
+                ul.style.display = 'none';
+            }
+            save();
+        });
+
+        li.append(btn);
+
         // Add the ul to the original list item
         li.append(ul);
     }
@@ -217,6 +252,7 @@ function buildRecursively (node) {
     return li;
 }
 
+// Used to grab the highest level (list item) nodes  
 function grabRecursively(node, buffer, newBuffer) {
     for (const child of node.children) {
         if (buffer.findIndex(node => node.note === child) > -1) {
@@ -226,6 +262,20 @@ function grabRecursively(node, buffer, newBuffer) {
         grabRecursively(child, buffer, newBuffer);
     }
     return newBuffer;
+}
+
+// Grab all the children of the node
+function grabChildrenRecursively(node, newBuffer) {
+    newBuffer.push(node);
+    for (child of Array.from(node.children)) {
+        newBuffer = grabChildrenRecursively(child, newBuffer);
+    }
+    return newBuffer;
+}
+
+// Alphabetize the filetree
+function alphabetizeRecursively() {
+
 }
 
 /**

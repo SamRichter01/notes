@@ -20,6 +20,7 @@ class noteNode {
         this.name = name;
         this.creationDate = Date.now();
         this.children = [];
+        this.minimized = false;
     }
 
 
