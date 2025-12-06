@@ -99,6 +99,15 @@ li {
     height: 100%;
 }
 
+#searchBar {
+    position: absolute;
+    margin: 8px;
+    display: block;
+    top: 16px;
+    right: 32px;
+    width: 300px;
+}
+
 .note {
     font-style: normal;
 }
