@@ -75,6 +75,7 @@ function retrieveSaveData () {
 
 // Build the file tree.
 function buildFileTree() {
+    alphabetizeRecursively(root);
     fileList.replaceChildren();
     for (node of root.children) {
         fileList.append(buildRecursively(node));
@@ -98,7 +99,7 @@ function buildRecursively (node) {
     li.className = node.type;
 
     // If the list element is the currently selected one, bold it
-    if (selectedNodeBuffer.findIndex(node => node.note === li.note) !== -1) {
+    if (selectedNodeBuffer.findIndex(node => node.note === li.note) !== -1 || node === currentNote) {
         li.className = li.className.concat(' selected');
     } else {
         li.className = li.className.concat(' nonSelected');
@@ -222,12 +223,13 @@ function buildRecursively (node) {
         
         // Attach the expand/minimize button
         let btn = document.createElement('button');
-        btn.textContent = 'Minimize';
 
         if (node === root || !node.minimized) {
             ul.style.display = '';
+            btn.textContent = 'Minimize';
         } else {
             ul.style.display = 'none';
+            btn.textContent = 'Expand';
         }
 
         btn.addEventListener('click', (e) => {
@@ -237,8 +239,10 @@ function buildRecursively (node) {
             
             if (!temp.minimized) {
                 ul.style.display = '';
+                btn.textContent = 'Minimize';
             } else {
                 ul.style.display = 'none';
+                btn.textContent = 'Expand';
             }
             save();
         });
@@ -274,9 +278,13 @@ function grabChildrenRecursively(node, newBuffer) {
 }
 
 // Alphabetize the filetree
-function alphabetizeRecursively() {
-
-}
+function alphabetizeRecursively(node) {
+    // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
+    node.children.sort((a, b) => a.name.localeCompare(b.name));
+    for (const child of node.children) {
+        alphabetizeRecursively(child);
+    }
+}   
 
 /**
  * Event listeners for the root folder 
@@ -299,6 +307,7 @@ fileList.addEventListener('drop', (event) => {
     dragBuffer = [];
     lastSelected = null;
 
+    save();
     buildFileTree();    
 });
 
@@ -338,6 +347,7 @@ function resetEditor() {
         d.disabled = true;
         t.disabled = true;
         f.disabled = false;
+        n.disabled = false;
         date.hidden = true;
     } else {
         if (currentNote.type === NOTE) {
