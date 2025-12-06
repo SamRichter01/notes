@@ -186,9 +186,13 @@ function buildRecursively (node) {
     });
 
     li.addEventListener('drop', (event) => {
-        event.stopPropagation();
 
-        // TODO: IF BEING DRAGGED INTO A NOTE, KEEP BUBBLING THE EVENT UP INSTEAD OF RETURNING?
+        if (event.target.note.type === NOTE) {
+            return;
+        } else {
+            event.stopPropagation();
+        }
+
         let dragBufferWithChildren = [];
         for (const node of dragBuffer) {
             dragBufferWithChildren.push(grabChildrenRecursively(node, dragBufferWithChildren));
