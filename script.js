@@ -186,18 +186,18 @@ function buildRecursively (node) {
     });
 
     li.addEventListener('drop', (event) => {
-
-        if (event.target.note.type === NOTE) {
+        if (event.currentTarget.note.type === NOTE) {
             return;
         } else {
             event.stopPropagation();
         }
-
+    
         let dragBufferWithChildren = [];
         for (const node of dragBuffer) {
-            dragBufferWithChildren.push(grabChildrenRecursively(node, dragBufferWithChildren));
+            grabChildrenRecursively(node, dragBufferWithChildren);
         }
-        if (dragBufferWithChildren.findIndex(note => note === event.target.note) > -1 || event.target.note.type === NOTE) {
+
+        if (dragBufferWithChildren.findIndex(note => note === event.currentTarget.note) > -1 || event.currentTarget.note.type === NOTE) {
             dragBuffer = [];
             return;
         }
@@ -206,7 +206,7 @@ function buildRecursively (node) {
             deleteRecursively(root, note.creationDate);
         }
 
-        event.target.note.children.push(...dragBuffer);
+        event.currentTarget.note.children.push(...dragBuffer);
 
         selectedNodeBuffer = [];
         dragBuffer = [];
@@ -251,10 +251,10 @@ function buildRecursively (node) {
             save();
         });
 
-        li.append(btn);
+        li.appendChild(btn);
 
         // Add the ul to the original list item
-        li.append(ul);
+        li.appendChild(ul);
     }
 
     return li;
@@ -276,7 +276,7 @@ function grabRecursively(node, buffer, newBuffer) {
 function grabChildrenRecursively(node, newBuffer) {
     newBuffer.push(node);
     for (child of Array.from(node.children)) {
-        newBuffer = grabChildrenRecursively(child, newBuffer);
+        newBuffer.push(grabChildrenRecursively(child, newBuffer));
     }
     return newBuffer;
 }
