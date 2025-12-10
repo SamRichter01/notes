@@ -99,6 +99,7 @@ function buildRecursively (node) {
     li.className = node.type;
 
     // If the list element is the currently selected one, bold it
+    // TODO: CHANGE TO .classlist.toggle('selected);
     if (selectedNodeBuffer.findIndex(node => node.note === li.note) !== -1 || node === currentNote) {
         li.className = li.className.concat(' selected');
     } else {
