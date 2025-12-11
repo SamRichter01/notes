@@ -35,7 +35,8 @@ function createSearchableArrayRecursively(node, arr) {
         'name': node.name,
         'content': node.content,
         'matchType': null,
-        'node': node
+        'node': node,
+        'matchSnippet': null
     };
 
     arr.push(searchable);
@@ -62,14 +63,21 @@ function searchNaively(searchString) {
             searchMatches.push(candidate);
         }
     }
-    console.log(searchMatches);
 }
 
 function searchNoteContent(candidate, searchString) {
     const tempElement = document.createElement('div');
     tempElement.innerHTML = candidate.content;
     const candidateText = tempElement.textContent;
-    if (candidateText.includes(searchString)) {
+    let searchResult = candidateText.search(searchString);
+    if (searchResult !== -1) {
+        if (searchResult - 5 > 0) {
+            candidate.matchSnippet = '...';
+        }
+        candidate.matchSnippet += candidateText.substring(searchResult - 5, searchResult + 5);
+        if (searchResult !== candidateText.length) {
+            candidate.matchSnippet += '...';
+        }
         return true;
     }
     return false;
@@ -82,11 +90,18 @@ function buildResultDropdown() {
     for (const result of searchMatches) {
         let li = document.createElement('li');
         li.node = result.node;
-        li.textContent = result.name;
+        let htmlString = `<h4>${result.name}</h4>`;
+        if (result.matchType === 'content') {
+            htmlString += `<p><em>${result.matchSnippet}</em></p>`;
+        }
+        li.innerHTML = htmlString;
         li.addEventListener('click', (e) => {
             e.stopPropagation();
             selectedNodeBuffer = [li.node];
             currentNote = li.node;
+            searchMatches = [];
+            searchBar.value = '';
+            buildResultDropdown();
             buildFileTree();
             resetEditor();
         });
