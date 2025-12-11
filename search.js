@@ -57,8 +57,7 @@ function searchNaively(searchString) {
         if (name.includes(searchString)) {
             candidate.matchType = 'name';
             searchMatches.push(candidate);
-        }
-        if (searchNoteContent(candidate, searchString)) {
+        } else if (searchNoteContent(candidate, searchString)) {
             candidate.matchType = 'content';
             searchMatches.push(candidate);
         }
