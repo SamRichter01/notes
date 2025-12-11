@@ -19,6 +19,9 @@ time, mark, audio, video {
     box-sizing: border-box;
 }
 
+h1 {
+    display: inline-block;
+}
 
 body, html {
     height: 100%;
@@ -97,6 +100,33 @@ li {
 #fileList {
     padding: 8px;
     height: 100%;
+}
+
+#searchBar {
+    position: absolute;
+    margin: 8px;
+    display: block;
+    top: 16px;
+    right: 32px;
+    width: 300px;
+}
+
+#dropdown {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+}
+
+#resultDropdown {
+    position: relative;
+    background: #dddddd;
+    top: 48px;
+    right: 40px;
+    width: 300px;
+    /* height: 300px; */
+    z-index: 10;
+    box-shadow: 1px 1px 1px;
 }
 
 .note {
