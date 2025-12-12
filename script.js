@@ -230,11 +230,11 @@ function buildRecursively (node) {
         let btn = document.createElement('button');
 
         if (node === root || !node.minimized) {
+            btn.innerHTML = `<img src='/icons/caret-down-solid.svg'/>`
             ul.style.display = '';
-            btn.textContent = 'Minimize';
         } else {
+            btn.innerHTML = `<img src='/icons/caret-right-solid.svg'/>`
             ul.style.display = 'none';
-            btn.textContent = 'Expand';
         }
 
         btn.addEventListener('click', (e) => {
@@ -243,11 +243,11 @@ function buildRecursively (node) {
             temp.minimized = !temp.minimized; 
             
             if (!temp.minimized) {
+                btn.innerHTML = `<img src='/icons/caret-down-solid.svg'/>`
                 ul.style.display = '';
-                btn.textContent = 'Minimize';
             } else {
+                btn.innerHTML = `<img src='/icons/caret-right-solid.svg'/>`
                 ul.style.display = 'none';
-                btn.textContent = 'Expand';
             }
             save();
         });

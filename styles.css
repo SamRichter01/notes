@@ -19,6 +19,17 @@ time, mark, audio, video {
     box-sizing: border-box;
 }
 
+img {
+    top: 0px;
+    width: 16px;
+    height: 16px;
+}
+
+button {
+    position: absolute;
+    height: 18px;
+}
+
 h1 {
     display: inline-block;
 }
