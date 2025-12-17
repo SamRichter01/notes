@@ -17,10 +17,18 @@ time, mark, audio, video {
 	border: 0;
 	vertical-align: baseline;
     box-sizing: border-box;
+    font-family: 'Funnel Sans';
+}
+
+img {
+    width: 24px;
+    height: 24px;
+    fill: #eeeeee;
 }
 
 h1 {
     display: inline-block;
+    padding: 8px;
 }
 
 body, html {
@@ -44,6 +52,28 @@ footer {
     background-color: #cccccc;
 }
 
+button {
+    margin: 4px;
+    font-family: 'Funnel Sans';
+    border-radius: 8px;
+}
+
+input {
+    margin: 4px;
+    font-family: 'Funnel Sans';
+    border-top-style: none;
+    border-right-style: none;
+    border-bottom-style: solid;
+    border-left-style: none;
+    padding: 4px;
+    background: none;
+}
+
+span {
+    padding: 4px;
+    border-radius: 4px;
+}
+
 ul {
     padding-left: 16px;
     list-style: none;
@@ -56,7 +86,7 @@ li {
 }
 
 #fileNav {
-    min-width: 180px;
+    min-width: 260px;
     width: 25%;
     background-color: #dddddd;
 }
@@ -68,9 +98,9 @@ li {
 }
 
 #toolbar {
+    height: 60px;
     display: block;
     width: 100%;
-    height: 40px;
     background-color: #eeeeee;
     padding: 8px;
 }
@@ -78,12 +108,13 @@ li {
 #edit {
     display: inline;
     width: 100%;
-    height: calc(100% - 40px);
+    /* height: calc(100% - 40px); */
     /* border: 2px solid black; */
 }
 
 #titleInput {
     width: 180px;
+    font-size: 18px;
 }
 
 #fileBar {
@@ -94,7 +125,7 @@ li {
 #fileBox {
     width: 100%;
     height: calc(100% - 40px);
-    margin-top: 8px;
+    margin-top: 8px; 
 }
 
 #fileList {
@@ -126,14 +157,61 @@ li {
     width: 300px;
     /* height: 300px; */
     z-index: 10;
-    box-shadow: 1px 1px 1px;
+    /* box-shadow: 1px 1px 1px; */
+    padding: 0px;
+}
+
+#dropdownList {
+    padding: 0px;
+}
+
+#logo {
+    height: 48px;
+}
+
+.li-span:hover {
+    background: #ffffff;
+}
+
+.iconButton {
+    padding: 4px;
+    height: 24px;
+    width: 32px;
+    justify-content: center;
+    align-content: center;
+}
+
+.iconButton svg {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.iconButton:hover {
+    height: 28px;
+    width: 32px;
+}
+
+.minCaretBtn {
+    background: url("../icons/caret-down-solid.svg") no-repeat scroll 0 0 transparent;
+    border: none;
+    height: 18px;
+    width: 18px;
+}
+
+.maxCaretBtn {
+    background: url("../icons/caret-right-solid.svg") no-repeat scroll 0 0 transparent;
+    border: none;
+    height: 18px;
+    width: 18px;
 }
 
 .note {
+    background: none;
     font-style: normal;
 }
 
 .folder {
+    background: none;
     font-style: italic;
 }
 
@@ -145,4 +223,31 @@ li {
     font-weight: normal;
 }
 
+.tool-button {
+    min-width: 32px;
+    padding: 6px;
+    border-style: none;
+    background: #eeeeee;
+    color: #111111;
+    box-shadow: 3px 3px 2px 0px #aaaaaa;
+}
+
+.tool-button:disabled {
+    background: #bbbbbb;
+    box-shadow: none;
+}
+
+.tool-button:hover:enabled {
+    background: #ffffff;
+    font-weight: bold;
+}
+
+.search-result {
+    padding: 8px;
+    margin: 0px;
+}
+
+.search-result:hover {
+    background: #ffffff;
+}
 

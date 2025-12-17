@@ -6,6 +6,7 @@
 
 const searchBar = document.getElementById('searchBar');
 let dropdown = document.getElementById('resultDropdown');
+const list =  document.getElementById('dropdownList');
 
 searchBar.placeholder = 'Search';
 
@@ -84,26 +85,38 @@ function searchNoteContent(candidate, searchString) {
 
 function buildResultDropdown() {
     dropdown.style.display = 'inline-block';
-    const list =  document.getElementById('dropdownList');
     list.replaceChildren();
-    for (const result of searchMatches) {
+    if (searchMatches.length === 0) {
         let li = document.createElement('li');
-        li.node = result.node;
-        let htmlString = `<h4>${result.name}</h4>`;
-        if (result.matchType === 'content') {
-            htmlString += `<p><em>${result.matchSnippet}</em></p>`;
-        }
-        li.innerHTML = htmlString;
-        li.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selectedNodeBuffer = [li.node];
-            currentNote = li.node;
-            searchMatches = [];
-            searchBar.value = '';
-            buildResultDropdown();
-            buildFileTree();
-            resetEditor();
-        });
+        li.innerHTML = `<span><em>No results found</em></span>`
         list.appendChild(li);
+    } else {
+        for (const result of searchMatches) {
+            let li = document.createElement('li');
+            li.node = result.node;
+            let htmlString = `<h4>${result.name}</h4>`;
+            if (result.matchType === 'content') {
+                htmlString += `<span><em>${result.matchSnippet}</em></span>`;
+            }
+            li.innerHTML = htmlString;
+            li.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedNodeBuffer = [li.node];
+                currentNote = li.node;
+                searchMatches = [];
+                searchBar.value = '';
+                buildResultDropdown();
+                buildFileTree();
+                resetEditor();
+            });
+            li.classList.add('search-result');
+            list.appendChild(li);
+        }
     }
+
+    document.querySelector('body').addEventListener('click', (e) => {
+        if(e.target !== dropdown) {
+            list.replaceChildren();
+        }
+    });
 }

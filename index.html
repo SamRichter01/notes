@@ -6,6 +6,9 @@
         <meta charset="UTF-8">
         <link rel="stylesheet" href="styles.css">
         <link rel="manifest" href="manifest.json">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     </head>
     <body>
         <header>
@@ -24,9 +27,9 @@
         <main>
             <div id="fileNav">
                 <div id="fileBar">
-                    <button id="newBtn">New note</button>
-                    <button id="newFolderBtn">New Folder</button>
-                    <button id="deleteBtn">Delete</button>
+                    <button id="newBtn" class="tool-button">New Note</button>
+                    <button id="newFolderBtn" class="tool-button">New Folder</button>
+                    <button id="deleteBtn" class="tool-button">Delete</button>
                     <hr>
                 </div>
                 <div id="fileBox">
@@ -36,10 +39,10 @@
             <div id="editor">
                 <div id="toolbar">
                     <input id="titleInput" type="Text">
-                    <button id="saveBtn">Save</button>
-                    <button id="boldBtn"><b>B</b></button>
-                    <button id="italicsBtn"><i>I</i></button>
-                    <button id="underlineBtn"><u>U</u></button>
+                    <button id="saveBtn" class="tool-button">Save</button>
+                    <button id="boldBtn" class="tool-button"><b>B</b></button>
+                    <button id="italicsBtn" class="tool-button"><i>I</i></button>
+                    <button id="underlineBtn" class="tool-button"><u>U</u></button>
                     <time id="createdDate"></time>
                 </div>
                 <!--The text editor area is contained in an iframe. An iframe contains a separate html document that can be edited

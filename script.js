@@ -16,6 +16,7 @@ const BUCKET = 'bucket';
 const e = document.getElementById('edit');
 let win = e.contentWindow;
 let doc = win.document;
+let body = e.contentDocument.querySelector('body');
 
 const b = document.getElementById('boldBtn');
 const i = document.getElementById('italicsBtn');
@@ -41,11 +42,11 @@ let lastSelected = null;
 /**
  * Disable non-functional buttons
  */
-b.disabled = true;
-i.disabled = true;
-u.disabled = true;
+b.hidden = true;
+i.hidden = true;
+u.hidden = true;
 // The save button is disabled now that I've implemented autosaving.
-s.disabled = true;
+s.hidden = true;
 
 /**
  * Parentheses around the function denote is as an Immediately Invoked Function Expression (IIFE)
@@ -89,7 +90,10 @@ function buildRecursively (node) {
     let li = document.createElement('li');
 
     // Sets the text of the node to be its name
-    li.textContent = node.name;
+    //li.textContent = node.name;
+    let liLabel = document.createElement('span');
+    liLabel.classList.add('li-span');
+    liLabel.textContent = node.name;
 
     // Attach the note's timestamp to the list element to identify the element as belonging to that note
     li.setAttribute('timestamp', node.creationDate);
@@ -101,20 +105,22 @@ function buildRecursively (node) {
     // If the list element is the currently selected one, bold it
     // TODO: CHANGE TO .classlist.toggle('selected);
     if (selectedNodeBuffer.findIndex(node => node.note === li.note) !== -1 || node === currentNote) {
-        li.className = li.className.concat(' selected');
+        li.classList.add('selected');
     } else {
-        li.className = li.className.concat(' nonSelected');
+        li.classList.add('nonSelected');
     }
 
     // Select note code
     li.addEventListener('click', (event) => {
+        if (event.currentTarget.tagName !== 'LI') {
+            return;
+        }
         event.stopPropagation();
-
         if (lastSelected !== null && event.shiftKey) {
             // Get every element in the file explorer.
             let allFiles = getSubFiles(fileList, []).filter(node => node.tagName === 'LI');
             let start = allFiles.findIndex(node => node.note === lastSelected.note);
-            let end = allFiles.indexOf(event.target);
+            let end = allFiles.indexOf(event.currentTarget);
             if (start > end) {
                 let temp = end;
                 end = start;
@@ -134,23 +140,23 @@ function buildRecursively (node) {
             */ 
             
         } else if (lastSelected !== null && event.ctrlKey) {
-            let index = selectedNodeBuffer.findIndex(node => node.note === event.target.note);
+            let index = selectedNodeBuffer.findIndex(node => node.note === event.currentTarget.note);
             if (index > -1) {
                 selectedNodeBuffer.splice(index, 1);
             } else {
-                selectedNodeBuffer.push(event.target);
+                selectedNodeBuffer.push(event.currentTarget);
             }
-            lastSelected = event.target;
+            lastSelected = event.currentTarget;
         } else {
              // Clicking between two list items returns the list as a target, so in that case we want to deselect everything.
-            if (event.target.tagName !== 'LI') {
+            if (event.currentTarget.tagName !== 'LI') {
                 selectedNodeBuffer = [];
                 lastSelected = null;
                 currentNote = root;
             } else {
-                selectedNodeBuffer = [event.target];
-                lastSelected = event.target;
-                currentNote = event.target.note;
+                selectedNodeBuffer = [event.currentTarget];
+                lastSelected = event.currentTarget;
+                currentNote = event.currentTarget.note;
             }
         }
        
@@ -230,33 +236,43 @@ function buildRecursively (node) {
         let btn = document.createElement('button');
 
         if (node === root || !node.minimized) {
+            btn.classList.remove('maxCaretBtn')
+            btn.classList.add('minCaretBtn');
             ul.style.display = '';
-            btn.textContent = 'Minimize';
         } else {
+            btn.classList.remove('minCaretBtn')
+            btn.classList.add('maxCaretBtn');
             ul.style.display = 'none';
-            btn.textContent = 'Expand';
         }
 
         btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            let temp = e.target.parentElement.note;
+            //e.stopPropagation();
+            let temp = e.currentTarget.parentElement.note;
             temp.minimized = !temp.minimized; 
             
             if (!temp.minimized) {
+                btn.classList.remove('maxCaretBtn')
+                btn.classList.add('minCaretBtn');
                 ul.style.display = '';
-                btn.textContent = 'Minimize';
             } else {
+                btn.classList.remove('minCaretBtn')
+                btn.classList.add('maxCaretBtn');
                 ul.style.display = 'none';
-                btn.textContent = 'Expand';
             }
             save();
         });
 
         li.appendChild(btn);
 
+        li.appendChild(liLabel);
+
         // Add the ul to the original list item
         li.appendChild(ul);
+
+        return li;
     }
+
+    li.appendChild(liLabel);
 
     return li;
 }
@@ -354,25 +370,30 @@ function resetEditor() {
         f.disabled = false;
         n.disabled = false;
         date.hidden = true;
+        t.value = 'No file selected';
+        e.style.background = '#eeeeee';
     } else {
+        t.value = currentNote.name;
         if (currentNote.type === NOTE) {
             doc.write(currentNote.content);
             e.style.display = 'initial'
             f.disabled = true;
             n.disabled = true;
             b.disabled = false;
+            e.style.background = '#ffffff';
         } else if (currentNote.type === FOLDER) {
             e.style.display = 'none'
             f.disabled = false;
             n.disabled = false;
             b.disabled = true;
+            e.style.background = '#eeeeee';
         }
         d.disabled = false;
         t.disabled = false;
         date.hidden = false;
     } 
+    
     doc.close();
-    t.value = currentNote.name;
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     let dateValue = new Date();
     dateValue.value = currentNote.creationDate;
